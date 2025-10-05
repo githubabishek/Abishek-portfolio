@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Abi Shek — Modern Portfolio</title>
+  <meta name="description" content="Modern, interactive single-file portfolio — projects, skills, experience, theme toggle, and animated UI." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=Space+Grotesk:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    /* -----------------------------------------------
+       Modern single-file portfolio (HTML + CSS + JS)
+       - Dark / Light theme toggle (prefers system)
+       - Animated gradient blob hero
+       - Glass cards, grid layout, modal project viewer
+       - Accessibility and reduced-motion support
+       - Easy-to-edit variables near the top
+       ----------------------------------------------- */
+
+    :root{
+      --bg: #0b1020;
+      --card: rgba(255,255,255,0.04);
+      --muted: #9aa4bd;
+      --text: #eaf2ff;
+      --accent-1: #6aa4ff;
+      --accent-2: #6fffd4;
+      --glass: rgba(255,255,255,0.04);
+      --glass-border: rgba(255,255,255,0.06);
+      --radius: 14px;
+      --maxw: 1200px;
+      --mono: 'Space Grotesk', Inter, system-ui, -apple-system, 'Segoe UI', Roboto;
+      --ease: cubic-bezier(.2,.9,.25,1);
+    }
+
+    @media (prefers-color-scheme: light){
+      :root{ --bg:#f6f8fb; --card: rgba(12,16,24,0.02); --muted:#4b5566; --text:#07102a; --glass: rgba(16,24,40,0.03); --glass-border: rgba(12,16,24,0.06); }
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family:var(--mono); background:radial-gradient(800px 400px at 10% 10%, rgba(106,164,255,0.06), transparent), var(--bg); color:var(--text); -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+    }
+
+    a{color:inherit}
+    img{max-width:100%; display:block}
+
+    /* Container */
+    .wrap{max-width:var(--maxw); margin:40px auto; padding:24px}
+
+    /* Header */
+    header{display:flex; align-items:center; justify-content:space-between; gap:16px}
+    .brand{display:flex; gap:14px; align-items:center}
+    .logo{width:48px; height:48px; border-radius:12px; background:linear-gradient(135deg,var(--accent-1),var(--accent-2)); display:grid; place-items:center; font-weight:800; color:#07102a}
+    nav{display:flex; gap:12px; align-items:center}
+    nav a{padding:8px 12px; border-radius:10px; color:var(--muted); font-weight:600; font-size:14px}
+    nav a:hover{color:var(--text)}
+    .controls{display:flex; gap:10px; align-items:center}
+
+    /* Hero */
+    .hero{display:grid; grid-template-columns:1fr 420px; gap:28px; align-items:center; margin-top:24px}
+    .hero-left{padding:22px; border-radius:18px; background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border:1px solid var(--glass-border); box-shadow:0 10px 30px rgba(2,6,23,0.6)}
+    .eyebrow{display:inline-flex; gap:8px; align-items:center; padding:8px 12px; border-radius:999px; background:linear-gradient(90deg, rgba(106,164,255,0.07), rgba(111,255,212,0.03)); color:var(--muted); font-weight:600}
+    h1{font-size: clamp(28px, 4.8vw, 48px); margin:14px 0 6px; line-height:1.02}
+    p.lead{color:var(--muted); font-size:16px; margin:0 0 18px; max-width:60ch}
+
+    .actions{display:flex; gap:12px; flex-wrap:wrap}
+    .btn{padding:12px 16px; border-radius:12px; background:var(--card); border:1px solid var(--glass-border); cursor:pointer; font-weight:700; color:var(--text); transition:transform .18s var(--ease)}
+    .btn:active{transform:translateY(1px)}
+    .btn.primary{background:linear-gradient(90deg,var(--accent-1),var(--accent-2)); color:#07102a}
+
+    /* Blob artwork */
+    .art{position:relative; height:100%; display:grid; place-items:center}
+    .blob{width:320px; height:320px; border-radius:42% 58% 51% 49% / 36% 40% 60% 64%; background:linear-gradient(135deg,var(--accent-1), var(--accent-2)); filter:blur(18px); opacity:0.85; transform:rotate(-12deg); transition:transform .6s var(--ease)}
+    .portrait{position:absolute; width:240px; height:240px; border-radius:18px; overflow:hidden; border:6px solid rgba(255,255,255,0.06); display:grid; place-items:center; background:rgba(0,0,0,0.12)}
+
+    .portrait {
+  position:absolute;
+  width:240px;
+  height:240px;
+  border-radius: 42% 58% 70% 30% / 30% 40% 60% 70%;   /* 👈 makes it circular */
+  overflow:hidden;
+  border:6px solid rgba(255,255,255,0.06);
+  display:grid;
+  place-items:center;
+  background:rgba(0,0,0,0.12);
+    }
+
+    /* Sections grid */
+    main{display:grid; grid-template-columns:2fr 1fr; gap:28px; margin-top:26px}
+    section.card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); padding:18px; border-radius:14px; border:1px solid var(--glass-border)}
+
+    /* Projects */
+    .projects-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:14px}
+    .project{display:flex; gap:12px; align-items:flex-start; padding:12px; border-radius:12px; background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent); border:1px solid rgba(255,255,255,0.02); cursor:pointer}
+    .project:hover{transform:translateY(-6px); box-shadow:0 18px 40px rgba(2,6,23,0.45)}
+    .project .thumb{width:110px; height:70px; border-radius:10px; overflow:hidden; flex-shrink:0; border:1px solid var(--glass-border)}
+    .project h4{margin:0 0 6px}
+    .project p{margin:0; color:var(--muted); font-size:14px}
+
+    /* Skills */
+    .skills{display:flex; flex-wrap:wrap; gap:10px}
+    .skill{padding:8px 12px; border-radius:999px; background:rgba(255,255,255,0.02); color:var(--muted); font-weight:700; border:1px solid rgba(255,255,255,0.02)}
+
+    /* Timeline */
+    .timeline{display:flex; flex-direction:column; gap:12px}
+    .job{padding:12px; border-radius:12px; background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent); border:1px solid rgba(255,255,255,0.02)}
+    .job small{color:var(--muted)}
+
+    /* Contact */
+    .contact-form input, .contact-form textarea{width:100%; padding:10px; margin-top:6px; border-radius:10px; border:1px solid var(--glass-border); background:transparent; color:var(--text)}
+    .contact-form button{margin-top:10px}
+
+    /* Modal */
+    .modal{position:fixed; inset:0; display:none; align-items:center; justify-content:center; z-index:60}
+    .modal.active{display:flex}
+    .modal .sheet{width:min(880px, calc(100% - 48px)); background:var(--bg); border-radius:14px; padding:18px; border:1px solid var(--glass-border); box-shadow:0 30px 80px rgba(2,6,23,0.8)}
+    .modal .close{position:absolute; right:18px; top:18px; background:transparent; border:0; color:var(--muted); font-size:22px}
+
+    /* Footer */
+    footer{margin-top:28px; display:flex; justify-content:space-between; color:var(--muted); font-size:13px}
+
+    /* Utilities */
+    .muted{color:var(--muted)}
+
+    /* Responsive */
+    @media (max-width: 980px){
+      .hero{grid-template-columns:1fr;}
+      main{grid-template-columns:1fr;}
+      .projects-grid{grid-template-columns:1fr}
+      .blob{display:none}
+      .portrait{position:relative; width:160px; height:160px}
+    }
+
+    /* Accessibility: reduced motion */
+    @media (prefers-reduced-motion: reduce){
+      *{transition:none!important}
+    }
+    .img{
+        border-radius: 42% 58% 70% 30% / 30% 40% 60% 70%;
+    }
+
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <div class="logo">ǟɮɨ</div>
+        <div>
+          <div style="font-weight:800">AbiShek</div>
+          <div class="muted" style="font-size:13px">Web Developer – WordPress & SEO</div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <nav aria-label="Primary">
+          <a href="#projects">Projects</a>
+          <a href="#experience">Experience</a>
+          <a href="#contact">Contact</a>
+        </nav>
+        <button id="themeBtn" class="btn" aria-pressed="false" title="Toggle theme">skills</button>
+        <a class="btn primary" href="#contact">Hire me</a>
+      </div>
+    </header>
+
+    <!-- HERO -->
+    <section class="hero" aria-labelledby="intro">
+      <div class="hero-left">
+        <div class="eyebrow">📖 model portfolio — modern UI</div>
+        <h1 id="intro">Hi I'm <span style="background:linear-gradient(90deg,var(--accent-1),var(--accent-2)); -webkit-background-clip:text; background-clip:text; color:transparent">Abi Shek</span></h1>
+        <p class="lead">Responsible for designing, developing, and maintaining WordPress websites, ensuring responsive design and smooth functionality. Implements SEO strategies to improve website visibility, optimize content, and boost search engine rankings for better online performance.</p>
+
+        <div class="actions">
+          <button class="btn primary" onclick="openSection('#projects')">View Projects</button>
+          <a class="btn" href="resume.pdf" target="_blank" rel="noreferrer">Download CV</a>
+          <a class="btn" href="mailto:you@example.com">sabi07494@gmail.com</a>
+        </div>
+
+        <div style="margin-top:16px; display:flex; gap:10px; align-items:center; flex-wrap:wrap">
+          <div class="skill">HTML</div>
+          <div class="skill">CSS</div>
+          <div class="skill">JavaScript</div>
+          <div class="skill">Wordpress</div>
+          <div class="skill">SEO</div>
+          <div class="skill">MySQL</div>
+          <div class="skill">Python</div>
+          <div class="skill">Google Analytics</div>
+          <div class="skill">Google Search Console</div>
+        </div>
+
+      </div>
+
+      <div class="art" aria-hidden="true">
+        <div class="blob" id="blob"></div>
+        <div class="portrait" role="img" aria-label="Portrait of Abi Shek">
+          <img src="abi pic.jpg" alt="Portrait" />
+        </div>
+      </div>
+    </section>
+
+    <main>
+      <!-- Left column: Projects, Experience -->
+      <div>
+        <section id="projects" class="card" aria-labelledby="projects-heading">
+          <h2 id="projects-heading">Projects</h2>
+          <p class="muted">Click a project to open details. Projects are filterable and annotated with tech.</p>
+
+          <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap">
+            <button class="btn" onclick="filterProjects('all')">All</button>
+            <button class="btn" onclick="filterProjects('frontend')">Frontend</button>
+            <button class="btn" onclick="filterProjects('ui')">UI</button>
+            <button class="btn" onclick="filterProjects('tools')">Tools</button>
+          </div>
+
+          <div class="projects-grid" style="margin-top:12px">
+
+            <article class="project" data-tags="frontend ui" tabindex="0" onclick="openProject(1)">
+              <div class="thumb"><img src="https://picsum.photos/400/300?random=11" alt="Project 1 screenshot"></div>
+              <div>
+                <h4>Food Delivery UI — Mobi Food</h4>
+                <p class="muted">Landing + marketplace with focus on performance and animations.</p>
+              </div>
+            </article>
+
+            <article class="project" data-tags="frontend tools" tabindex="0" onclick="openProject(2)">
+              <div class="thumb"><img src="https://picsum.photos/400/300?random=12" alt="Project 2 screenshot"></div>
+              <div>
+                <h4>Design System</h4>
+                <p class="muted">Component library, tokens, and accessible primitives for teams.</p>
+              </div>
+            </article>
+
+            <article class="project" data-tags="ui" tabindex="0" onclick="openProject(3)">
+              <div class="thumb"><img src="https://picsum.photos/400/300?random=13" alt="Project 3 screenshot"></div>
+              <div>
+                <h4>Travel Planner</h4>
+                <p class="muted">Map-driven explorer with filters and progressive data loading.</p>
+              </div>
+            </article>
+
+            <article class="project" data-tags="frontend" tabindex="0" onclick="openProject(4)">
+              <div class="thumb"><img src="https://picsum.photos/400/300?random=14" alt="Project 4 screenshot"></div>
+              <div>
+                <h4>Portfolio Template</h4>
+                <p class="muted">This portfolio — made as a fast single-file template.</p>
+              </div>
+            </article>
+
+          </div>
+        </section>
+
+        <section id="experience" class="card" style="margin-top:18px">
+          <h2>Experience</h2>
+          <div class="timeline" style="margin-top:12px">
+            <div class="job">
+              <strong>Web Developer - WordPress & SEO — SCHOENEN DIS LLP</strong>
+              <div><small class="muted">May 1-2025 — Present </small></div>
+              <p class="muted" style="margin-top:8px">Website Design & Layout, WooCommerce Development, Performance Optimization, and Etc...</p>
+            </div>
+
+            
+
+          </div>
+        </section>
+      </div>
+
+      <!-- Right column: About + Contact -->
+      <aside>
+        <section class="card" aria-labelledby="about-heading">
+          <h3 id="about-heading">About</h3>
+          <p class="muted">Web Developer – WordPress & SEO
+Focused on creating and customizing WordPress websites with user-friendly layouts and optimized performance. Enhances site visibility through effective SEO techniques, keyword optimization, and analytics to drive traffic and improve search engine results.</p>
+
+          <div style="margin-top:12px">
+            <h4 style="margin:0 0 8px">Skills</h4>
+            <div class="skills">
+              <span class="skill">HTML</span>
+              <span class="skill">CSS</span>
+              <span class="skill">JavaScript</span>
+              <span class="skill">WordPress</span>
+              <span class="skill">SEO</span>
+              <span class="skill">Python</span>
+              <span class="skill">MySQL</span>
+              <span class="skill">Google Analytics</span>
+              <span class="skill">Google Search Console</span>
+            </div>
+          </div>
+        </section>
+
+        <section id="contact" class="card" style="margin-top:18px">
+          <h3>Contact</h3>
+          <form class="contact-form" onsubmit="handleContact(event)">
+            <label for="cname">Name</label>
+            <input id="cname" required placeholder="Your name" />
+            <label for="cemail">Email</label>
+            <input id="cemail" type="email" required placeholder="you@example.com" />
+            <label for="cmsg">Message</label>
+            <textarea id="cmsg" placeholder="How can I help?" rows="4"></textarea>
+            <button class="btn primary" type="submit">Send</button>
+            <div class="muted" style="margin-top:8px; font-size:13px">Tip: Replace handleContact() with your form endpoint (Formspree/Netlify).</div>
+          </form>
+        </section>
+
+        <section class="card" style="margin-top:18px">
+          <h4>Quick Links</h4>
+          <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap">
+            <a class="btn" href="https://github.com/githubabishek/phase1">GitHub</a>
+            <a class="btn" href="https://www.linkedin.com/in/abi-shek-a889752ba">LinkedIn</a>
+            <a class="btn" href="https://www.instagram.com/abi._.zz__/">Instagram</a>
+          </div>
+        </section>
+      </aside>
+
+    </main>
+
+    <footer>
+      <div class="muted">© <span id="year"></span> AbiShek</div>
+      <div class="muted">Built with ❤️ — Single-file template</div>
+    </footer>
+
+  </div>
+
+  <!-- Project Modal -->
+  <div id="modal" class="modal" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="sheet">
+      <button class="close" aria-label="Close" onclick="closeModal()">✕</button>
+      <div id="modalContent"></div>
+    </div>
+  </div>
+
+  <script>
+    // Basic utilities and interactions
+    const yearEl = document.getElementById('year');
+    yearEl.textContent = new Date().getFullYear();
+
+    function openSection(sel){ document.querySelector(sel).scrollIntoView({behavior:'smooth', block:'start'}); }
+
+    // Theme toggle (stores preference)
+    const themeBtn = document.getElementById('themeBtn');
+    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const stored = localStorage.getItem('portfolio-theme');
+    const isDark = stored ? stored === 'dark' : prefersDark;
+    setTheme(isDark ? 'dark' : 'light');
+
+    themeBtn.addEventListener('click', ()=>{
+      const next = document.documentElement.classList.contains('light') ? 'dark' : 'light';
+      setTheme(next);
+    });
+
+    function setTheme(name){
+      if(name === 'dark'){
+        document.documentElement.classList.remove('light');
+        document.documentElement.classList.add('dark');
+        localStorage.setItem('portfolio-theme','dark');
+        themeBtn.setAttribute('aria-pressed','true');
+      } else {
+        document.documentElement.classList.remove('dark');
+        document.documentElement.classList.add('light');
+        localStorage.setItem('portfolio-theme','light');
+        themeBtn.setAttribute('aria-pressed','false');
+      }
+    }
+
+    // Animated blob (subtle motion without heavy CPU)
+    const blob = document.getElementById('blob');
+    let t = 0;
+    function tick(){
+      t += 0.012;
+      const x = Math.cos(t) * 10;
+      const y = Math.sin(t * 1.2) * 8;
+      const r = 6 + Math.sin(t * 0.7) * 4;
+      blob.style.transform = `translate(${x}px, ${y}px) rotate(${r}deg)`;
+      requestAnimationFrame(tick);
+    }
+    if(window.matchMedia('(prefers-reduced-motion: reduce)').matches === false){ requestAnimationFrame(tick); }
+
+    // Projects data (simple client-side)
+    const projects = {
+      1: {title:'Mobi Food — Delivery', desc:'Responsive food delivery UI with order flow and animations. Built with accessibility-first markup.', img:'https://picsum.photos/1000/600?random=21', tech:['HTML','CSS','JS']},
+      2: {title:'Design System', desc:'Component library with tokens and docs. Highly reusable primitives.', img:'https://picsum.photos/1000/600?random=22', tech:['React','Storybook']},
+      3: {title:'Travel Planner', desc:'Map-driven travel planner with filters and offline caching.', img:'https://picsum.photos/1000/600?random=23', tech:['Leaflet','PWA']},
+      4: {title:'Portfolio Template', desc:'This fast single-file portfolio template, optimized for performance and printing.', img:'https://picsum.photos/1000/600?random=24', tech:['HTML','CSS']}
+    };
+
+    function openProject(id){
+      const p = projects[id];
+      const modal = document.getElementById('modal');
+      const content = document.getElementById('modalContent');
+      content.innerHTML = `
+        <h2>${p.title}</h2>
+        <p class=\"muted\">${p.desc}</p>
+        <img style=\"width:100%; border-radius:10px; margin-top:12px\" src=\"${p.img}\" alt=\"${p.title}\" />
+        <p style=\"margin-top:12px\"><strong>Tech:</strong> ${p.tech.join(', ')}</p>
+        <div style=\"margin-top:12px; display:flex; gap:8px\"> <a class=\"btn primary\" href=\"#\">Live</a> <a class=\"btn\" href=\"#\">Source</a> </div>
+      `;
+      modal.classList.add('active');
+      modal.setAttribute('aria-hidden','false');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeModal(){
+      const modal = document.getElementById('modal');
+      modal.classList.remove('active');
+      modal.setAttribute('aria-hidden','true');
+      document.body.style.overflow = '';
+    }
+    document.getElementById('modal').addEventListener('click', (e)=>{ if(e.target.id === 'modal') closeModal(); });
+
+    // Project filtering
+    function filterProjects(tag){
+      const nodes = document.querySelectorAll('.project');
+      nodes.forEach(n=>{
+        const tags = n.dataset.tags.split(' ');
+        if(tag === 'all' || tags.includes(tag)){
+          n.style.display = '';
+        } else n.style.display = 'none';
+      });
+    }
+
+    // Contact handler (demo)
+    function handleContact(e){
+      e.preventDefault();
+      const name = document.getElementById('cname').value;
+      const email = document.getElementById('cemail').value;
+      const msg = document.getElementById('cmsg').value;
+      // Replace with real endpoint. Here we simply open mail client as a fallback.
+      const mailto = `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent('Portfolio contact from '+name)}&body=${encodeURIComponent(msg)}`;
+      window.location.href = mailto;
+    }
+
+    // Small keyboard accessibility: Enter on project opens modal
+    document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') closeModal(); });
+
+  </script>
+</body>
+</html>
